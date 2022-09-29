@@ -56,11 +56,12 @@ namespace JwtWebApiTest.Controllers
             return Ok(token);
         }
 
-        // step to for implement JWT
+        // step to for implement JWT (JWT work flow)
         // 1. Create password hash method
         //      - Use cryptography algorithm to create passwordSalt and passwordHash; Store in the user object
         //      - When User try to log in, Then "we" will again create the passwordHash with the stored Salt and compare the 2 Hash
-        // 2. If login success, create Token with the User
+        // 2. If login success, create Token with the User and return the token
+        // 3. Use the JWT put it in the authorization/authentication header of the HTTP Request (not included) (with this you can authorize user to access curtain action)
 
         private string CreateToken(User user)
         {
