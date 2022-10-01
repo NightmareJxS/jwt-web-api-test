@@ -9,6 +9,6 @@
 3. Use the JWT put it in the authorization/authentication header of the HTTP Request
         (included role-base authentication (video 2)) (with this you can authorize user to access curtain action)
 4. (Optional) Read JWT authorization Claims of a User (better practice)
-    2 ways: Controller or Service
-        + Controller is not the best practice
-        + Use Service in final production
+    - 2 ways: Controller or Service
+        * Controller is not the best practice
+        * Use Service in final production
