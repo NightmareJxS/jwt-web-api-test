@@ -1,3 +1,4 @@
+global using JwtWebApiTest.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -11,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddHttpContextAccessor(); // The default implementation (if don't want to use default, you can write one yourself)
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
@@ -21,8 +24,9 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey
     });
     options.OperationFilter<SecurityRequirementsOperationFilter>(); // From Matt Frear
-});// Front-End will doo differently (currenly code for swagger)
+});// Front-End will do differently (currenly code for swagger)
 // Input authorize string: "bearer {JWT}"
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

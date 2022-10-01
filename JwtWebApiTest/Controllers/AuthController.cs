@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization.Infrastructure;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -14,12 +15,36 @@ namespace JwtWebApiTest.Controllers
     {
         public static User user = new User();
         private readonly IConfiguration _configuration;
+        private readonly IUserService _userService;
 
-        public AuthController(IConfiguration configuration)
+        // dependency injection ?
+        public AuthController(IConfiguration configuration, IUserService userService)
         {
             _configuration = configuration;
+            _userService = userService;
         }
 
+        [HttpGet, Authorize]
+        public ActionResult<string> GetMe()
+        {
+            // Only work with Authorize available
+
+
+            // --Use service--
+            var userName = _userService.GetMyName();
+            return Ok(userName);
+
+            // --Use Controller (not practical)--
+            //var userName = User?.Identity?.Name;
+            //var userName2 = User.FindFirstValue(ClaimTypes.Name);
+            //var role = User.FindFirstValue(ClaimTypes.Role);
+            //return Ok(new
+            //{
+            //    userName,
+            //    userName2,
+            //    role
+            //});
+        }
 
         // Not optimal!
         // Try not to use the controller for all the logic (fat controller)
@@ -62,7 +87,11 @@ namespace JwtWebApiTest.Controllers
         //      - When User try to log in, Then "we" will again create the passwordHash with the stored Salt and compare the 2 Hash
         // 2. If login success, create Token with the User and return the token
         // 3. Use the JWT put it in the authorization/authentication header of the HTTP Request
-        //      (included role-base authentication (video 2)) (with this you can authorize user to access curtain action)
+        //          (included role-base authentication (video 2)) (with this you can authorize user to access curtain action)
+        // 4. (Optional) Read JWT authorization Claims of a User (better practice)
+        //      2 ways: Controller or Service
+        //              + Controller is not the best practice
+        //              + Use Service in final production
 
         private string CreateToken(User user)
         {
