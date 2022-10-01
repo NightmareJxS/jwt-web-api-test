@@ -61,7 +61,8 @@ namespace JwtWebApiTest.Controllers
         //      - Use cryptography algorithm to create passwordSalt and passwordHash; Store in the user object
         //      - When User try to log in, Then "we" will again create the passwordHash with the stored Salt and compare the 2 Hash
         // 2. If login success, create Token with the User and return the token
-        // 3. Use the JWT put it in the authorization/authentication header of the HTTP Request (not included) (with this you can authorize user to access curtain action)
+        // 3. Use the JWT put it in the authorization/authentication header of the HTTP Request
+        //      (included role-base authentication (video 2)) (with this you can authorize user to access curtain action)
 
         private string CreateToken(User user)
         {
@@ -70,8 +71,10 @@ namespace JwtWebApiTest.Controllers
             List<Claim> claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(JwtRegisteredClaimNames.Name, user.Username)  // use this fixed the claimType return link
+                new Claim(JwtRegisteredClaimNames.Name, user.Username),  // use this fixed the claimType return link
+                new Claim(ClaimTypes.Role, "Admin")  // Testing: change between "{any role}" or "Admin"
                 // reasons docs: https://social.msdn.microsoft.com/Forums/en-US/ec2ecd60-43ef-48c2-bfdc-664095ec61ba/claimtypes-value-is-different-than-what-it-seems?forum=aspsecurity
+                // backward compatibility reason: https://stackoverflow.com/questions/50012155/jwt-claim-names
             };
 
             // Key
