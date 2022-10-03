@@ -1,4 +1,4 @@
-﻿namespace JwtWebApiTest
+﻿namespace JwtWebApiTest.Models
 {
     public class UserDTO
     {

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using JwtWebApiTest.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -76,9 +77,38 @@ namespace JwtWebApiTest.Controllers
             {
                 return BadRequest("Wrong Password");
             }
+            // Create JWT token
+            string token = CreateToken(user);
+            // Create Refresh token
+            var refreshToken = GenerateRefreshToken();
+            SetRefreshToken(refreshToken);// http only so no JS can get the value
+
+
+            return Ok(token);
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<string>> RefreshToken()
+        {
+            // get refreshToken cookie
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            // look for a user with this RefreshToken (in Database)
+            if (!user.RefreshToken.Equals(refreshToken))
+            {
+                return Unauthorized("Invalid Refresh Token");
+            }
+            else if (user.TokenExpires < DateTime.Now)
+            {
+                return Unauthorized("Token expired");
+            }
 
             string token = CreateToken(user);
+            var newRefreshToken = GenerateRefreshToken();
+            SetRefreshToken(newRefreshToken);
+
             return Ok(token);
+
         }
 
         // step to for implement JWT (JWT work flow)
@@ -86,12 +116,24 @@ namespace JwtWebApiTest.Controllers
         //      - Use cryptography algorithm to create passwordSalt and passwordHash; Store in the user object
         //      - When User try to log in, Then "we" will again create the passwordHash with the stored Salt and compare the 2 Hash
         // 2. If login success, create Token with the User and return the token
+        //      - Create secret key (token) and store it in appsetting.json or Database (some where secure)
         // 3. Use the JWT put it in the authorization/authentication header of the HTTP Request
         //          (included role-base authentication (video 2)) (with this you can authorize user to access curtain action)
         // 4. (Optional) Read JWT authorization Claims of a User (better practice)
         //      2 ways: Controller or Service
         //              + Controller is not the best practice
         //              + Use Service in final production
+        //  *Store the refresh token, not the JWT token???*
+        //  *Store token in memory for login without sign-in
+        // 5. Refresh token (Front-End Responsibility to call when JWT is expiring)(Could compare old vs new RefreshToken for fishy activity)
+        //      - GenerateRefreshToken()
+        //      - SetRefreshToken()
+        //      - 2 ways to store RefreshToken:
+        //          - Cookie: http only so JS can't get it
+        //          - AuthenticateResponseDTO: an obj where JWT token + RefreshToken in 1 package (and give it to front-end)
+        // 6. Simple CORS (haven't test if it work or not)
+        //      - (Self-taught from the course's repo): https://github.com/patrickgod/JwtWebApiTutorial
+        //      - More detail on CORS: https://learn.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-6.0
 
         private string CreateToken(User user)
         {
@@ -123,6 +165,34 @@ namespace JwtWebApiTest.Controllers
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
             return jwt;
+        }
+
+        private RefreshToken GenerateRefreshToken()
+        {
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Expires = DateTime.Now.AddDays(7),
+                Created = DateTime.Now
+            };
+
+            return refreshToken;
+        }
+
+        private void SetRefreshToken(RefreshToken newRefreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = newRefreshToken.Expires
+            };
+
+            // Add cookie to respone
+            Response.Cookies.Append("refreshToken", newRefreshToken.Token, cookieOptions);
+
+            user.RefreshToken = newRefreshToken.Token;
+            user.TokenCreated = newRefreshToken.Created;
+            user.TokenExpires = newRefreshToken.Expires;
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
